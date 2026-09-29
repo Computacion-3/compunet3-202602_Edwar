@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { AppLogger } from '../../common/logger/logger.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
@@ -18,9 +19,11 @@ export class UserService {
         private readonly userRepository: Repository<User>,
         private readonly roleService: RoleService,
         private readonly configService: ConfigService,
+        private readonly appLogger: AppLogger,
     ) {}
 
     async create(createUserDto: CreateUserDto): Promise<User> {
+        this.appLogger.debug(`Iniciando creación de usuario: ${createUserDto.email}`);
         const { roleId, ...userData } = createUserDto;
         const role = await this.roleService.findOne(roleId);
         if (!role) {
@@ -40,10 +43,12 @@ export class UserService {
         const savedUser = await this.userRepository.save(user);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { passwordHash: _, ...userWithoutPassword } = savedUser;
+        this.appLogger.log(`Usuario creado exitosamente con email: ${createUserDto.email}`);
         return userWithoutPassword as User;
     }
 
     async findAll(): Promise<User[]> {
+        this.appLogger.debug('Iniciando búsqueda de todos los usuarios');
         return await this.userRepository.find({
             relations: { role: true },
         });
